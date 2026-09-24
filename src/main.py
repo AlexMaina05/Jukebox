@@ -66,6 +66,17 @@ async def process_download_job(job: dict):
     is_local = job.get('is_local', False)
     local_path = job.get('local_path')
     
+    # Invia messaggio di stato su Telegram se applicabile
+    status_msg = None
+    try:
+        if chat_id != 0:
+            title_hint = url.replace('ytsearch1:', '') if url and 'ytsearch1:' in url else 'link fornito'
+            if is_local:
+                title_hint = 'file locale'
+            status_msg = await bot.send_message(chat_id, f"⬇️ Inizio elaborazione per: *{title_hint}*...", parse_mode="Markdown")
+    except Exception:
+        pass
+    
     try:
         if is_local:
             logger.info(f"Elaborazione file locale: {local_path}")
@@ -74,6 +85,13 @@ async def process_download_job(job: dict):
         else:
             logger.info(f"Downloading {url}")
             file_path, video_title = await downloader.download(url)
+            
+            # Aggiorna il messaggio
+            if status_msg:
+                try:
+                    await status_msg.edit_text(f"🔍 Ricerca metadati per: *{video_title}*...", parse_mode="Markdown")
+                except Exception:
+                    pass
             
         logger.info(f"Ricerca metadati per: {video_title}")
         meta = await tagger.get_metadata(file_path, query=video_title)
