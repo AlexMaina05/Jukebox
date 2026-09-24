@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -21,8 +21,8 @@ from src.queue_manager import DownloadQueue
 with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
-# Setup directories
-MUSIC_DIR = Path(config['MUSIC_DIR'])
+# Setup directories (fallback a /music se non specificato)
+MUSIC_DIR = Path(config.get('app', {}).get('music_dir', '/music'))
 PICARD_DIR = MUSIC_DIR / "picard"
 PICARD_DIR.mkdir(parents=True, exist_ok=True)
 TEMP_DIR = MUSIC_DIR / ".jukebox_temp"
@@ -32,8 +32,11 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-bot = Bot(token=config['TELEGRAM_TOKEN'], default=DefaultBotProperties(parse_mode='HTML'))
+bot_token = config.get('telegram', {}).get('bot_token', '')
+bot = Bot(token=bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 dp = Dispatcher()
+
+ALLOWED_USERS = config.get('telegram', {}).get('allowed_users', [])
 
 downloader = AudioDownloader(output_dir=TEMP_DIR)
 download_queue = DownloadQueue(concurrency=2)
@@ -78,13 +81,13 @@ async def process_download_job(job: dict):
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    if message.from_user.id not in config.get('ALLOWED_USERS', []):
+    if message.from_user.id not in ALLOWED_USERS:
         return
     await message.answer("Ciao! Invia un link YouTube per scaricarlo direttamente in /music/picard.")
 
 @dp.message(F.text)
 async def handle_text(message: Message):
-    if message.from_user.id not in config.get('ALLOWED_USERS', []):
+    if message.from_user.id not in ALLOWED_USERS:
         return
     
     url = message.text.strip()
