@@ -56,9 +56,9 @@ class AudioTagger:
                 except Exception:
                     pass
             
-            # Aumentiamo il limite a 25, perché i bootleg/live ottengono lo stesso score (100) dell'originale 
+            # Aumentiamo il limite a 100, perché i bootleg/live ottengono lo stesso score (100) dell'originale 
             # e potrebbero "spingere" l'album originale fuori dai primi risultati
-            return musicbrainzngs.search_recordings(query=mb_query, limit=25)
+            return musicbrainzngs.search_recordings(query=mb_query, limit=100)
             
         result = await asyncio.to_thread(_search)
         
@@ -107,8 +107,17 @@ class AudioTagger:
                 score += 20
             
             rg = r.get('release-group', {})
-            primary = rg.get('primary-type', '')
-            secondaries = rg.get('secondary-type-list', []) or rg.get('secondary-types', [])
+            primary = rg.get('primary-type') or rg.get('type') or ''
+            
+            secondaries_raw = rg.get('secondary-type-list', []) or rg.get('secondary-types', [])
+            secondaries = []
+            for s in secondaries_raw:
+                if isinstance(s, dict):
+                    # musicbrainzngs a volte lo parsa come dict: {'secondary-type': 'Live'} o simili
+                    for k, v in s.items():
+                        secondaries.append(str(v))
+                else:
+                    secondaries.append(str(s))
             
             if primary == 'Album':
                 score += 50
