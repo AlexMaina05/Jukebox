@@ -190,7 +190,8 @@ class AudioTagger:
                 warnings.filterwarnings('ignore')
                 
                 logger.info(f"Avvio analisi DJ (BPM/Key) per {file_path}...")
-                y, sr = librosa.load(str(file_path), sr=None, duration=120) # Analizza primi 2 min
+                # Riduciamo il sample rate e la durata per evitare crash OOM del container
+                y, sr = librosa.load(str(file_path), sr=22050, duration=30) 
                 tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
                 bpm = round(tempo[0]) if isinstance(tempo, np.ndarray) else round(tempo)
                 bpm_str = str(bpm)

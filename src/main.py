@@ -134,7 +134,9 @@ async def handle_tag_choice(callback: types.CallbackQuery):
     await callback.message.edit_text(f"⏳ Applicazione tag dall'album '{release.get('title')}' in corso...")
     
     try:
-        await tagger.apply_tag_and_move(job['file_path'], job['title'], job['artist'], release)
+        final_title = release.get('rec_title', job['title'])
+        final_artist = release.get('rec_artist', job['artist'])
+        await tagger.apply_tag_and_move(job['file_path'], final_title, final_artist, release)
         await navidrome_client.start_scan()
         
         rel_id = release.get('id')
