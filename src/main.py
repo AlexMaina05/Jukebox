@@ -369,7 +369,7 @@ async def websocket_endpoint(websocket: WebSocket):
         if websocket in active_connections:
             active_connections.remove(websocket)
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def healthcheck():
     return {"status": "healthy"}
 
