@@ -32,7 +32,14 @@ class AudioDownloader:
 
         info = await asyncio.to_thread(_download)
         
-        file_path = self.output_dir / f"{info['id']}.{self.audio_format}"
+        # Se è una ricerca (ytsearch), l'info è una playlist e il video vero è in entries[0]
+        if 'entries' in info and len(info['entries']) > 0:
+            video_info = info['entries'][0]
+        else:
+            video_info = info
+            
+        file_path = self.output_dir / f"{video_info['id']}.{self.audio_format}"
+        video_title = video_info.get('title', '')
         
         # Normalizzazione EBU R128
         def _normalize():
@@ -67,4 +74,4 @@ class AudioDownloader:
             # Se la normalizzazione fallisce (es. formato strano), continuiamo col file originale
             print(f"Normalizzazione fallita per {file_path}: {e}")
 
-        return file_path, info.get('title', '')
+        return file_path, video_title

@@ -1,5 +1,9 @@
 import asyncio
 import logging
+
+# Silenzia i warning ignorabili di musicbrainzngs
+logging.getLogger("musicbrainzngs").setLevel(logging.WARNING)
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 import yaml
