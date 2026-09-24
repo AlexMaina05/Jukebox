@@ -266,7 +266,7 @@ async def handle_url(message: Message):
         return
 
     def _extract_urls():
-        ydl_opts = {'extract_flat': True, 'quiet': True, 'no_warnings': True}
+        ydl_opts = {'extract_flat': True, 'quiet': True, 'no_warnings': True, 'noplaylist': True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             return ydl.extract_info(url, download=False)
             
@@ -509,7 +509,7 @@ async def submit_url(url: str = Form(...)):
         return RedirectResponse(url="/", status_code=303)
         
     def _extract():
-        with yt_dlp.YoutubeDL({'extract_flat': True, 'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'extract_flat': True, 'quiet': True, 'noplaylist': True}) as ydl:
             return ydl.extract_info(url, download=False)
     try:
         info = await asyncio.to_thread(_extract)
