@@ -61,8 +61,13 @@ class AudioTagger:
             
         result = await asyncio.to_thread(_search)
         
-        title = file_path.stem
+        title = query
         artist = 'Unknown Artist'
+        if ' - ' in query:
+            parts = query.split(' - ', 1)
+            artist = parts[0].strip()
+            title = parts[1].strip()
+            
         releases = []
 
         if result.get('recording-list'):
