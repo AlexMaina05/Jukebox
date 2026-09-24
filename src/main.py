@@ -333,7 +333,9 @@ from fastapi import Form, Query, UploadFile, File, WebSocket, WebSocketDisconnec
 import shutil
 import json
 
-templates = Jinja2Templates(directory="templates")
+import os
+BASE_DIR = Path(__file__).resolve().parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # --- WebSocket State ---
 active_connections: list[WebSocket] = []
