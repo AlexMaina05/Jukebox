@@ -3,17 +3,6 @@ telegram:
   allowed_users: 
     - 123456789                      # Il tuo ID numerico Telegram (@userinfobot)
 
-discord:
-  bot_token: "IL_TUO_TOKEN_DISCORD"  # (Opzionale) Dal Discord Developer Portal (seleziona intent "Message Content")
-
-acoustid:
-  api_key: "TUA_API_KEY"             # Da acoustid.org (serve per il de-duplicatore)
-
-navidrome:
-  url: "http://192.168.x.x:4533"     # Indirizzo del server Navidrome
-  username: "admin"                  # Utente Navidrome
-  password: "password123"            # Password Navidrome
-
 app:
   music_dir: "/musica"               # Mappatura standard se usi Docker
   audio_format: "mp3"                # Formati supportati: mp3, flac, m4a, wav
