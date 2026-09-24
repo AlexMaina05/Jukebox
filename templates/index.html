@@ -46,7 +46,6 @@
             const data = JSON.parse(e.data);
             this.queue_size = data.queue_size;
             if (this.pending_count !== data.pending_count) {
-                if (data.pending_count > this.pending_count) { window.location.reload(); }
                 this.pending_count = data.pending_count;
             }
         };

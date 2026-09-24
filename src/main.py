@@ -49,7 +49,9 @@ bot = Bot(token=TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMod
 dp = Dispatcher()
 download_queue = DownloadQueue(concurrency=2)
 
-downloader = AudioDownloader(output_dir=MUSIC_DIR, audio_format=AUDIO_FORMAT, audio_quality=AUDIO_QUALITY)
+TEMP_DOWNLOAD_DIR = MUSIC_DIR / ".jukebox_temp"
+TEMP_DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+downloader = AudioDownloader(output_dir=TEMP_DOWNLOAD_DIR, audio_format=AUDIO_FORMAT, audio_quality=AUDIO_QUALITY)
 tagger = AudioTagger(music_dir=MUSIC_DIR, acoustid_key=config.get("acoustid", {}).get("api_key", ""))
 navidrome_client = NavidromeClient(
     base_url=config.get("navidrome", {}).get("url", ""),
