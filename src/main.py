@@ -438,11 +438,15 @@ async def upload_file(file: UploadFile = File(...)):
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     pending_choices = await get_all_pending_choices()
-    return templates.TemplateResponse("index.html", {
-        "request": request, 
-        "queue_size": download_queue.queue.qsize(),
-        "pending_choices": pending_choices
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html", 
+        context={
+            "request": request, 
+            "queue_size": download_queue.queue.qsize(),
+            "pending_choices": pending_choices
+        }
+    )
 
 @app.post("/resolve_tag/{task_id}")
 async def resolve_tag_web(task_id: str, release_idx: int = Form(...)):
