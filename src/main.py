@@ -460,7 +460,9 @@ async def resolve_tag_web(task_id: str, release_idx: int = Form(...)):
     
     release = job['releases'][release_idx]
     try:
-        await tagger.apply_tag_and_move(job['file_path'], job['title'], job['artist'], release)
+        final_title = release.get('rec_title', job['title'])
+        final_artist = release.get('rec_artist', job['artist'])
+        await tagger.apply_tag_and_move(job['file_path'], final_title, final_artist, release)
         await navidrome_client.start_scan()
         if job['chat_id'] != 0:
             await bot.send_message(job['chat_id'], f"✅ Brano disponibile in Navidrome!\n🎵 {job['title']} - {release.get('title')}")

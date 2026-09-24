@@ -290,7 +290,7 @@
                                     <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Scegli Versione Corretta</label>
                                     <select name="release_idx" class="bg-highlight border-none text-white text-sm rounded-xl block w-full p-3 focus:ring-1 focus:ring-brand">
                                         {% for i in range(job.releases|length) %}
-                                        <option value="{{ i }}">{{ job.releases[i].title }} ({{ job.releases[i].date or '?' }})</option>
+                                        <option value="{{ i }}">{{ job.releases[i].rec_artist or job.artist }} - {{ job.releases[i].title }} ({{ job.releases[i].date or '?' }})</option>
                                         {% endfor %}
                                     </select>
                                     <button type="submit" class="mt-4 w-full bg-white hover:bg-gray-200 text-black font-bold py-3 rounded-xl transition-colors">

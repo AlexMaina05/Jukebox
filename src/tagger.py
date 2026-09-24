@@ -59,9 +59,17 @@ class AudioTagger:
             
             # Combina gli album dei top 3 risultati per offrire più scelta
             for rec in result['recording-list']:
+                rec_title = rec.get('title', title)
+                rec_artist = 'Unknown Artist'
+                if rec.get('artist-credit'):
+                    rec_artist = rec['artist-credit'][0].get('artist', {}).get('name', 'Unknown Artist')
+                
                 rels = rec.get('release-list') or rec.get('releases') or []
                 for r in rels:
                     if not any(existing['id'] == r['id'] for existing in releases):
+                        # Salviamo il titolo e l'artista della registrazione dentro la release
+                        r['rec_title'] = rec_title
+                        r['rec_artist'] = rec_artist
                         releases.append(r)
         elif 'recording' in result:
             recording = result['recording']
@@ -69,6 +77,9 @@ class AudioTagger:
             if recording.get('artist-credit'):
                 artist = recording['artist-credit'][0].get('artist', {}).get('name', 'Unknown Artist')
             releases = recording.get('release-list') or recording.get('releases') or []
+            for r in releases:
+                r['rec_title'] = title
+                r['rec_artist'] = artist
 
         return {
             "title": title,
