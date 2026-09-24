@@ -524,6 +524,36 @@ async def submit_url(url: str = Form(...)):
         pass
     return RedirectResponse(url="/", status_code=303)
 
+import glob
+
+@app.get("/api/library")
+async def get_local_library(limit: int = 50):
+    try:
+        files = []
+        for ext in ('*.mp3', '*.flac', '*.m4a'):
+            files.extend(glob.glob(os.path.join(MUSIC_DIR, "**", ext), recursive=True))
+        
+        files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        
+        results = []
+        for f in files[:limit]:
+            rel_path = os.path.relpath(f, MUSIC_DIR)
+            parts = rel_path.split(os.sep)
+            
+            artist = parts[0] if len(parts) > 1 else "Sconosciuto"
+            title = os.path.splitext(os.path.basename(f))[0]
+            
+            results.append({
+                "path": rel_path,
+                "artist": artist,
+                "title": title,
+                "added_at": os.path.getmtime(f)
+            })
+        return {"status": "ok", "files": results}
+    except Exception as e:
+        logger.error(f"Errore lettura libreria: {e}")
+        return {"status": "error", "files": []}
+
 # --- USB EXPORTER ---
 from src.exporter import create_usb_export
 import uuid
