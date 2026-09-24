@@ -98,6 +98,26 @@ async def process_download_job(job: dict):
                     pass
             
         logger.info(f"Ricerca metadati per: {video_title}")
+        
+        # Se abbiamo già i dati esatti dell'album, applichiamo direttamente il tag!
+        force_release = job.get('force_release')
+        if force_release:
+            force_title = job.get('force_title', video_title)
+            force_artist = job.get('force_artist', 'Unknown Artist')
+            
+            if status_msg:
+                try: await status_msg.edit_text(f"🎧 Applicazione tag a *{force_title}*...", parse_mode="Markdown")
+                except: pass
+                
+            await tagger.apply_tag_and_move(file_path, force_title, force_artist, force_release)
+            await navidrome_client.start_scan()
+            if chat_id != 0:
+                if status_msg:
+                    try: await status_msg.delete()
+                    except: pass
+                await bot.send_message(chat_id, f"✅ Brano disponibile! ({force_title})")
+            return
+
         meta = await tagger.get_metadata(file_path, query=video_title)
         
         releases = meta['releases']
@@ -204,7 +224,13 @@ async def handle_album_download(callback: types.CallbackQuery):
             continue
             
         queued += 1
-        await download_queue.add_job({"url": f"ytsearch1:{track_info['query']}", "chat_id": callback.message.chat.id})
+        await download_queue.add_job({
+            "url": f"ytsearch1:{track_info['query']}",
+            "chat_id": callback.message.chat.id,
+            "force_release": track_info['release'],
+            "force_title": track_info['title'],
+            "force_artist": track_info['artist']
+        })
         
     status_msg = f"{callback.message.text}\n✅ Accodate {queued} tracce."
     if skipped > 0:

@@ -151,6 +151,7 @@ class AudioTagger:
                 release = musicbrainzngs.get_release_by_id(release_id, includes=['recordings', 'artists'])
                 tracks = []
                 album_title = release.get('release', {}).get('title', 'Unknown Album')
+                album_date = release.get('release', {}).get('date')
                 for medium in release.get('release', {}).get('medium-list', []):
                     for track in medium.get('track-list', []):
                         rec = track.get('recording', {})
@@ -165,7 +166,12 @@ class AudioTagger:
                                 'artist': a_name,
                                 'album': album_title,
                                 'title': t_title,
-                                'query': f"{a_name} - {t_title}"
+                                'query': f"{a_name} - {t_title}",
+                                'release': {
+                                    'id': release_id,
+                                    'title': album_title,
+                                    'date': album_date
+                                }
                             })
                 return tracks
             except Exception:
