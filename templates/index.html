@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukebox - Media Portal</title>
+    <link rel="manifest" href="/manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#1DB954',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #121212; color: #ffffff; }
+        .glass { background: rgba(30, 30, 30, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .format-time { font-variant-numeric: tabular-nums; }
+        .drop-zone { transition: all 0.2s ease; }
+        .drop-zone.active { border-color: #1DB954; background: rgba(29, 185, 84, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans antialiased" x-data="{ 
+    queue_size: {{ queue_size }}, 
+    pending_count: {{ pending_choices|length }},
+    initWs() {
+        const ws = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws');
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            this.queue_size = data.queue_size;
+            // if pending_count changed, we could refresh the page or just show a badge
+            if (this.pending_count !== data.pending_count) {
+                if (data.pending_count > this.pending_count) {
+                    window.location.reload(); // simple auto-refresh when new choices appear
+                }
+                this.pending_count = data.pending_count;
+            }
+        };
+        // keepalive
+        setInterval(() => { if(ws.readyState===1) ws.send('ping'); }, 30000);
+    }
+}" x-init="initWs()">
+    
+    <div class="max-w-4xl mx-auto space-y-8">
+        
+        <!-- Header with Live WebSocket indicator -->
+        <header class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-extrabold tracking-tight flex items-center gap-3">
+                <span class="text-brand text-4xl">🎵</span> Jukebox Portal
+            </h1>
+            <div class="glass px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all">
+                <div class="w-2 h-2 rounded-full transition-colors duration-300" :class="queue_size == 0 ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'"></div>
+                <span x-text="queue_size + ' brani in coda'"></span>
+            </div>
+        </header>
+
+        <!-- Drag & Drop / Search Section -->
+        <section class="glass rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            
+            <h2 class="text-xl font-semibold mb-4 text-gray-200">Aggiungi Musica</h2>
+            
+            <!-- Drag & Drop Zone for Local Files -->
+            <div x-data="{ dragging: false, uploadFile(e) {
+                const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+                if(!files || files.length === 0) return;
+                
+                const formData = new FormData();
+                formData.append('file', files[0]);
+                
+                fetch('/upload', { method: 'POST', body: formData })
+                  .then(r => window.location.reload());
+            }}" 
+            @dragover.prevent="dragging = true" 
+            @dragleave.prevent="dragging = false" 
+            @drop.prevent="dragging = false; uploadFile($event)"
+            :class="dragging ? 'active' : 'border-gray-600'"
+            class="drop-zone border-2 border-dashed rounded-xl p-8 mb-6 text-center cursor-pointer hover:border-brand transition-colors"
+            @click="$refs.fileInput.click()">
+                <input type="file" x-ref="fileInput" class="hidden" accept=".mp3,.m4a,.flac,.wav" @change="uploadFile">
+                <div class="text-gray-400">
+                    <span class="block text-3xl mb-2">📁</span>
+                    <p class="font-medium">Trascina qui i tuoi MP3 locali</p>
+                    <p class="text-sm">oppure clicca per cercare sul disco</p>
+                </div>
+            </div>
+
+            <!-- YouTube / Spotify Search -->
+            <form action="/submit" method="post" class="relative" x-data="{ query: '', results: [], searching: false, formatDuration(secs) { return Math.floor(secs/60) + ':' + (secs%60).toString().padStart(2, '0'); }, doSearch() { if(!this.query.trim()) { this.results=[]; return; } if(this.query.startsWith('http')) return; this.searching = true; fetch('/api/search?q=' + encodeURIComponent(this.query)).then(r => r.json()).then(d => { this.results = d.results || []; this.searching = false; }).catch(() => { this.searching = false; }); } }">
+                <div class="flex gap-2">
+                    <input type="text" name="url" x-model="query" @input.debounce.500ms="doSearch" placeholder="...oppure cerca su YouTube o incolla link Spotify..." class="w-full bg-black/40 border border-gray-600 rounded-xl px-5 py-4 text-lg text-white placeholder-gray-400 focus:outline-none focus:border-brand transition-all">
+                    <button type="submit" class="bg-brand hover:bg-green-600 text-white font-bold py-4 px-8 rounded-xl transition-colors shrink-0">
+                        Scarica
+                    </button>
+                </div>
+                
+                <!-- Search Results Grid -->
+                <div x-show="results.length > 0" x-transition class="absolute z-10 w-full mt-2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden max-h-96 overflow-y-auto">
+                    <ul class="divide-y divide-gray-800">
+                        <template x-for="res in results" :key="res.id">
+                            <li>
+                                <form action="/submit" method="post" class="m-0">
+                                    <input type="hidden" name="url" :value="res.url">
+                                    <button type="submit" class="w-full text-left p-3 hover:bg-gray-800 transition-colors flex items-center gap-4 group">
+                                        <img :src="res.thumbnail" class="w-16 h-12 object-cover rounded-md group-hover:scale-105 transition-transform">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white font-medium truncate" x-text="res.title"></p>
+                                            <p class="text-gray-400 text-sm truncate" x-text="res.uploader"></p>
+                                        </div>
+                                        <span class="text-gray-500 text-sm format-time" x-text="formatDuration(res.duration)"></span>
+                                    </button>
+                                </form>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </form>
+        </section>
+
+        <!-- USB Export Section -->
+        <section class="glass rounded-2xl p-6 shadow-2xl mt-8" x-data="{ exportQuery: '', exporting: false, exportId: null, exportReady: false, startExport() { if(!this.exportQuery) return; this.exporting=true; const fd = new FormData(); fd.append('q', this.exportQuery); fetch('/api/export', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ this.exportId = d.export_id; this.pollExport(); }); }, pollExport() { if(!this.exportId) return; const int = setInterval(() => { fetch('/api/export/status/'+this.exportId).then(r=>r.json()).then(d=>{ if(d.status==='done'){ clearInterval(int); this.exporting=false; this.exportReady=true; } else if(d.status==='error'){ clearInterval(int); this.exporting=false; alert('Errore esportazione'); } }); }, 2000); } }">
+            <h2 class="text-xl font-semibold mb-2 text-gray-200">Esporta per Auto / USB</h2>
+            <p class="text-sm text-gray-400 mb-4">Cerca per Artista o Album. Verrà creato uno ZIP con brani convertiti in MP3 192kbps (nomi file sicuri).</p>
+            
+            <div class="flex gap-2 mb-4">
+                <input type="text" x-model="exportQuery" placeholder="Es. Queen, Daft Punk..." class="w-full bg-black/40 border border-gray-600 rounded-xl px-5 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-brand">
+                <button @click="startExport()" :disabled="exporting" class="bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl transition-colors shrink-0">
+                    <span x-show="!exporting">Prepara ZIP</span>
+                    <span x-show="exporting" class="animate-pulse">Conversione in corso...</span>
+                </button>
+            </div>
+            
+            <div x-show="exportReady" x-transition class="p-4 bg-green-900/30 border border-green-700 rounded-xl text-center">
+                <p class="text-green-400 font-medium mb-3">✅ Esportazione completata!</p>
+                <a :href="'/download_export/' + exportId" class="inline-block bg-brand hover:bg-green-600 text-white font-bold py-2 px-8 rounded-lg shadow-lg">Scarica ZIP (Scade tra 1 ora)</a>
+            </div>
+        </section>
+
+        <!-- Pending Tags -->
+        {% if pending_choices %}
+        <section class="glass rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-gray-200">Azione Richiesta</h2>
+                <span class="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold">{{ pending_choices|length }} in attesa</span>
+            </div>
+            
+            <div class="grid gap-6 md:grid-cols-2">
+                {% for task_id, job in pending_choices.items() %}
+                <div class="bg-black/30 border border-gray-700 rounded-xl p-5 flex flex-col justify-between">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-bold text-white line-clamp-1">{{ job.title }}</h3>
+                        <p class="text-gray-400 text-sm line-clamp-1">{{ job.artist }}</p>
+                    </div>
+
+                    <!-- Mini Audio Preview Player -->
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Ascolta anteprima:</p>
+                        <audio controls class="w-full h-8" preload="none">
+                            <source src="/stream/{{ task_id }}" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <form action="/resolve_tag/{{ task_id }}" method="post" class="flex flex-col gap-2">
+                        <label class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Scegli l'album corretto:</label>
+                        <select name="release_idx" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus:ring-brand focus:border-brand">
+                            {% for i in range(job.releases|length) %}
+                            <option value="{{ i }}">{{ job.releases[i].title }} ({{ job.releases[i].date or '?' }})</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="mt-2 w-full bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 rounded-lg transition-colors">
+                            Conferma Tag
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+</body>
+</html>

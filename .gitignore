@@ -1,0 +1,34 @@
+# Ambiente Virtuale e Dipendenze
+venv/
+env/
+.env
+
+# Python Cache & File di test
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# File di Configurazione (Sicurezza Token!)
+config.yaml
+config.yml
+secrets.json
+
+# Database e Dati dell'app
+data/
+*.sqlite
+*.db
+
+# Cartelle temporanee create dall'applicazione
+temp_uploads/
+temp_exports/
+temp_cover.jpg
+
+# Directory della musica
+musica/
+
+# File e configurazioni IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store

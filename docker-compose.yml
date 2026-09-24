@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  media_portal:
+    build: .
+    container_name: media_portal
+    restart: unless-stopped
+    ports:
+      - "8020:8020"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./data:/app/data
+      - /percorso/alla/tua/musica:/musica
+    environment:
+      - TZ=Europe/Rome
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8020/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
