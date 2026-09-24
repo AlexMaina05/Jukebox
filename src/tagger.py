@@ -36,8 +36,14 @@ class AudioTagger:
             # Pulisce query da testi inutili tipo (Official Music Video), [Lyrics], ecc.
             clean_query = re.sub(r'(?i)[\[\(].*?(official|video|audio|lyric|hd|hq).*?[\]\)]', '', query).strip()
             
-            # Se il titolo contiene ' - ', è altamente probabile che sia "Artista - Titolo", molto più affidabile di AcoustID!
-            mb_query = clean_query.replace('-', ' ')
+            # Se il titolo contiene ' - ', estraiamo Artista e Titolo per una ricerca precisa
+            if ' - ' in clean_query:
+                parts = clean_query.split(' - ', 1)
+                artist_part = parts[0].strip().replace('"', '')
+                title_part = parts[1].strip().replace('"', '')
+                mb_query = f'artist:({artist_part}) AND recording:({title_part})'
+            else:
+                mb_query = clean_query
             
             # Usa AcoustID solo se non c'è un trattino evidente (es. titolo senza artista)
             if self.acoustid_key and ' - ' not in query:
