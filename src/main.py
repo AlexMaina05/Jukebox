@@ -506,16 +506,16 @@ async def submit_url(url: str = Form(...)):
     try:
         info = await asyncio.to_thread(_extract)
         if info and 'entries' in info:
-                for entry in info['entries']:
-                    vu = entry.get('url')
-                    if vu and not vu.startswith('http'):
-                        vu = f"https://www.youtube.com/watch?v={entry.get('id')}"
-                    if vu:
-                        await download_queue.add_job({"url": vu, "chat_id": 0})
-            else:
-                await download_queue.add_job({"url": url, "chat_id": 0})
-        except Exception:
-            pass
+            for entry in info['entries']:
+                vu = entry.get('url')
+                if vu and not vu.startswith('http'):
+                    vu = f"https://www.youtube.com/watch?v={entry.get('id')}"
+                if vu:
+                    await download_queue.add_job({"url": vu, "chat_id": 0})
+        else:
+            await download_queue.add_job({"url": url, "chat_id": 0})
+    except Exception:
+        pass
     return RedirectResponse(url="/", status_code=303)
 
 # --- USB EXPORTER ---
