@@ -20,6 +20,8 @@ class AudioDownloader:
                     'preferredquality': self.audio_quality,
                 }
             ],
+            'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+            'source_address': '0.0.0.0', # Forza IPv4 per evitare blocchi IPv6 di YouTube
             'quiet': True,
             'no_warnings': True
         }

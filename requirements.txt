@@ -1,7 +1,7 @@
 fastapi>=0.103.1
 uvicorn[standard]>=0.23.2
 aiogram>=3.1.1
-yt-dlp>=2023.10.13
+yt-dlp>=2024.08.06
 mutagen>=1.47.0
 musicbrainzngs>=0.7.1
 httpx>=0.25.0
