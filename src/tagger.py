@@ -127,17 +127,19 @@ class AudioTagger:
             pass
 
         def _tag_and_move():
-            try:
-                audio = EasyID3(str(file_path))
-            except Exception:
-                audio = EasyID3() 
+            from mutagen import File
+            audio = File(str(file_path), easy=True)
+            if audio is None:
+                raise Exception("Formato audio non supportato per i tag")
+            if audio.tags is None:
+                audio.add_tags()
                 
-            audio['title'] = title
-            audio['artist'] = artist
-            audio['album'] = album
+            audio.tags['title'] = title
+            audio.tags['artist'] = artist
+            audio.tags['album'] = album
             if date:
-                audio['date'] = date
-            audio.save(str(file_path) if not hasattr(audio, 'filename') else None)
+                audio.tags['date'] = date
+            audio.save()
 
             # Analisi Audio per DJ Mode (BPM e Chiave)
             bpm_str = None
