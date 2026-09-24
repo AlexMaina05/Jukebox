@@ -8,9 +8,10 @@ services:
     ports:
       - "8020:8020"
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config.yaml:/app/config.yaml
+      - /mnt/storage_musica:/music    # <--- ECCO LA TUA MODIFICA
       - ./data:/app/data
-      - /percorso/alla/tua/musica:/musica
+      - ./temp_exports:/app/temp_exports
     environment:
       - TZ=Europe/Rome
     healthcheck:
