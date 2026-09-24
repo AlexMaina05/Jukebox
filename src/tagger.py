@@ -32,15 +32,18 @@ class AudioTagger:
         file_path = Path(file_path)
         
         def _search():
+            mb_query = query
             if self.acoustid_key:
                 try:
                     results = acoustid.match(self.acoustid_key, str(file_path))
                     for score, record_id, title, artist in results:
                         if score > 0.5:
-                            return musicbrainzngs.get_recording_by_id(record_id, includes=['artists', 'releases'])
+                            # Usa AcoustID per trovare il nome vero, poi cerca il brano canonico!
+                            mb_query = f"{title} {artist}"
+                            break
                 except Exception:
                     pass
-            return musicbrainzngs.search_recordings(query=query, limit=1)
+            return musicbrainzngs.search_recordings(query=mb_query, limit=3)
             
         result = await asyncio.to_thread(_search)
         
@@ -48,14 +51,20 @@ class AudioTagger:
         artist = 'Unknown Artist'
         releases = []
 
-        if 'recording' in result:
-            recording = result['recording']
-        elif result.get('recording-list'):
+        if result.get('recording-list'):
             recording = result['recording-list'][0]
-        else:
-            recording = None
-
-        if recording:
+            title = recording.get('title', title)
+            if recording.get('artist-credit'):
+                artist = recording['artist-credit'][0].get('artist', {}).get('name', 'Unknown Artist')
+            
+            # Combina gli album dei top 3 risultati per offrire più scelta
+            for rec in result['recording-list']:
+                rels = rec.get('release-list') or rec.get('releases') or []
+                for r in rels:
+                    if not any(existing['id'] == r['id'] for existing in releases):
+                        releases.append(r)
+        elif 'recording' in result:
+            recording = result['recording']
             title = recording.get('title', title)
             if recording.get('artist-credit'):
                 artist = recording['artist-credit'][0].get('artist', {}).get('name', 'Unknown Artist')
