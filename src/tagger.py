@@ -56,8 +56,9 @@ class AudioTagger:
                 except Exception:
                     pass
             
-            # Se la ricerca fallisce con clean_query, usa MusicBrainz
-            return musicbrainzngs.search_recordings(query=mb_query, limit=5)
+            # Aumentiamo il limite a 25, perché i bootleg/live ottengono lo stesso score (100) dell'originale 
+            # e potrebbero "spingere" l'album originale fuori dai primi risultati
+            return musicbrainzngs.search_recordings(query=mb_query, limit=25)
             
         result = await asyncio.to_thread(_search)
         
