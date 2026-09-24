@@ -533,8 +533,8 @@ async def get_local_library(limit: int = 50):
     try:
         files = []
         for ext in ('*.mp3', '*.flac', '*.m4a'):
-            files.extend(glob.glob(os.path.join(MUSIC_DIR, "**", ext), recursive=True))
-        
+            found = glob.glob(os.path.join(MUSIC_DIR, "**", ext), recursive=True)
+            files.extend([f for f in found if ".jukebox_temp" not in f])
         files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
         
         results = []

@@ -15,15 +15,6 @@ class AudioDownloader:
             'outtmpl': str(self.output_dir / '%(id)s.%(ext)s'),
             'postprocessors': [
                 {
-                    # SponsorBlock: rimuove segmenti non musicali, intro, outro ecc.
-                    'key': 'SponsorBlock',
-                    'categories': ['sponsor', 'intro', 'outro', 'interaction', 'music_offtopic']
-                },
-                {
-                    'key': 'ModifyChapters',
-                    'remove_sponsor_segments': ['sponsor', 'intro', 'outro', 'interaction', 'music_offtopic']
-                },
-                {
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': self.audio_format,
                     'preferredquality': self.audio_quality,
@@ -58,8 +49,7 @@ class AudioDownloader:
             normalizer = FFmpegNormalize(
                 target_level=-14.0,
                 audio_codec=codec,
-                audio_bitrate=f"{self.audio_quality}k" if self.audio_format in ['mp3', 'm4a'] else None,
-                quiet=True
+                audio_bitrate=f"{self.audio_quality}k" if self.audio_format in ['mp3', 'm4a'] else None
             )
             
             temp_norm = self.output_dir / f"norm_{info['id']}.{self.audio_format}"
