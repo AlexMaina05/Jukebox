@@ -182,9 +182,34 @@ async def handle_album_download(callback: types.CallbackQuery):
         await callback.message.edit_text(f"{callback.message.text}\n❌ Impossibile recuperare la tracklist dell'album.")
         return
         
-    await callback.message.edit_text(f"{callback.message.text}\n✅ Trovate {len(tracks)} tracce. Accodamento in corso...")
-    for track_query in tracks:
-        await download_queue.add_job({"url": f"ytsearch1:{track_query}", "chat_id": callback.message.chat.id})
+    from src.tagger import sanitize_filename
+    skipped = 0
+    queued = 0
+    for track_info in tracks:
+        safe_artist = sanitize_filename(track_info['artist'])
+        safe_album = sanitize_filename(track_info['album'])
+        safe_title = sanitize_filename(track_info['title'])
+        
+        # Cerca file con estensioni audio comuni
+        target_dir = MUSIC_DIR / safe_artist / safe_album
+        exists = False
+        if target_dir.exists():
+            for ext in ['.mp3', '.m4a', '.flac']:
+                if (target_dir / f"{safe_title}{ext}").exists():
+                    exists = True
+                    break
+                    
+        if exists:
+            skipped += 1
+            continue
+            
+        queued += 1
+        await download_queue.add_job({"url": f"ytsearch1:{track_info['query']}", "chat_id": callback.message.chat.id})
+        
+    status_msg = f"{callback.message.text}\n✅ Accodate {queued} tracce."
+    if skipped > 0:
+        status_msg += f" ({skipped} già presenti saltate)"
+    await callback.message.edit_text(status_msg)
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):

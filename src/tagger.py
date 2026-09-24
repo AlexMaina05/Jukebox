@@ -145,11 +145,12 @@ class AudioTagger:
             "releases": releases
         }
         
-    async def get_album_tracks(self, release_id: str) -> list[str]:
+    async def get_album_tracks(self, release_id: str) -> list[dict]:
         def _get():
             try:
                 release = musicbrainzngs.get_release_by_id(release_id, includes=['recordings', 'artists'])
                 tracks = []
+                album_title = release.get('release', {}).get('title', 'Unknown Album')
                 for medium in release.get('release', {}).get('medium-list', []):
                     for track in medium.get('track-list', []):
                         rec = track.get('recording', {})
@@ -160,7 +161,12 @@ class AudioTagger:
                             acredit = release['release'].get('artist-credit')
                             if acredit:
                                 a_name = acredit[0].get('artist', {}).get('name', 'Unknown')
-                            tracks.append(f"{a_name} - {t_title}")
+                            tracks.append({
+                                'artist': a_name,
+                                'album': album_title,
+                                'title': t_title,
+                                'query': f"{a_name} - {t_title}"
+                            })
                 return tracks
             except Exception:
                 return []
