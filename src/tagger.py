@@ -100,6 +100,35 @@ class AudioTagger:
                 r['rec_title'] = title
                 r['rec_artist'] = artist
 
+        def _score_release(r):
+            score = 0
+            if r.get('status') == 'Official':
+                score += 20
+            
+            rg = r.get('release-group', {})
+            primary = rg.get('primary-type', '')
+            secondaries = rg.get('secondary-type-list', []) or rg.get('secondary-types', [])
+            
+            if primary == 'Album':
+                score += 50
+            elif primary == 'Single':
+                score += 10
+                
+            if 'Compilation' in secondaries:
+                score -= 40
+            if 'Live' in secondaries:
+                score -= 40
+            if 'Remix' in secondaries:
+                score -= 40
+            if 'Mixtape/Street' in secondaries:
+                score -= 40
+                
+            # Ritorna prima lo score più alto (negativo), poi la data più vecchia
+            date = r.get('date', '9999')
+            return (-score, date)
+
+        releases.sort(key=_score_release)
+
         return {
             "title": title,
             "artist": artist,
