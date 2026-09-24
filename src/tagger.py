@@ -32,18 +32,26 @@ class AudioTagger:
         file_path = Path(file_path)
         
         def _search():
-            mb_query = query
-            if self.acoustid_key:
+            import re
+            # Pulisce query da testi inutili tipo (Official Music Video), [Lyrics], ecc.
+            clean_query = re.sub(r'(?i)[\[\(].*?(official|video|audio|lyric|hd|hq).*?[\]\)]', '', query).strip()
+            
+            # Se il titolo contiene ' - ', è altamente probabile che sia "Artista - Titolo", molto più affidabile di AcoustID!
+            mb_query = clean_query.replace('-', ' ')
+            
+            # Usa AcoustID solo se non c'è un trattino evidente (es. titolo senza artista)
+            if self.acoustid_key and ' - ' not in query:
                 try:
                     results = acoustid.match(self.acoustid_key, str(file_path))
                     for score, record_id, title, artist in results:
                         if score > 0.5:
-                            # Usa AcoustID per trovare il nome vero, poi cerca il brano canonico!
                             mb_query = f"{title} {artist}"
                             break
                 except Exception:
                     pass
-            return musicbrainzngs.search_recordings(query=mb_query, limit=3)
+            
+            # Se la ricerca fallisce con clean_query, usa MusicBrainz
+            return musicbrainzngs.search_recordings(query=mb_query, limit=5)
             
         result = await asyncio.to_thread(_search)
         
