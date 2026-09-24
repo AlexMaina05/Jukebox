@@ -11,8 +11,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia il codice sorgente
+# Copia il codice sorgente e i template
 COPY src/ /app/src/
+COPY templates/ /app/templates/
 
 # Configurazione default porte
 EXPOSE 8020
