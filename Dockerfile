@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 # Installa ffmpeg, chromaprint (per AcoustID) e libsndfile (per librosa)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg libchromaprint-tools libsndfile1 wget && \
+    apt-get install -y --no-install-recommends ffmpeg libchromaprint-tools libsndfile1 wget curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
